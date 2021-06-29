@@ -1,22 +1,33 @@
-## IMPORTANT
+## AWS Proton
 
-Proton is making breaking API changes strating in 5/21/2021 in preparation for launching into the SDK.  For more information, visit our [migration guide](https://docs.aws.amazon.com/proton/latest/adminguide/ga-api-migration.html).  If possible, we recommend using the console, which won't have a disruption in service, or wait until we launch in the SDK.
+AWS Proton is the first fully managed delivery service for container and serverless applications. Platform engineering teams can use AWS Proton to connect and coordinate all the different tools needed for infrastructure provisioning, code deployments, monitoring, and updates.
 
-If you want to keep using the CLI, at some point it will stop working.  The instructions on this branch have been updated to include the API changes, which are detailed in the [migration guide](https://docs.aws.amazon.com/proton/latest/adminguide/ga-api-migration.html).
+## AWS Serverless Project
 
-If this doesn't work for you, it's likely that Proton hasn't rolled out the API changes to your region.  In that case, go to the `old-api` [branch](https://github.com/aws-samples/aws-proton-sample-templates/tree/old-api) and use the instructions from there.
+This repository represents Proton configuration to establish the following simple Serverless architecture:
+- Dynamo DB Table
+- Lambda handlers
+- API Gateway
 
-Once we are launched in the official AWS SDK and CLI, we will update this repo to use standard practices.  For our loyal customers, we appreciate you, sorry for any trouble, and we hope you enjoy the new API.
+Lambda handlers are attached to API Gateway (AWS_PROXY integration) and can interact with Dynamo DB.
 
-## AWS Proton sample templates
+As Proton entities, resources above are grouped as:
+- Proton Environment: Dynamo DB and API Gateway. It is a shared infrastructure which can be created from Proton Environment Template ("environment" folder).
+- Proton Service: Lambda handlers. It is handlers created from Proton Service template ("lambda-service" folder) which work inbetween API Gateway and Dynamo DB in a particular environemnt. 
 
-This repository is a curated list of sample templates to use with AWS Proton. AWS Proton is an application delivery service available at [aws.amazon.com/proton](https://aws.amazon.com/proton).
+Please read more at AWS documentation at https://docs.aws.amazon.com/proton/index.html
 
-To use this repository, browse to the folder that corresponds to the template that you want to use. You will find there all the information you need to create environment and service templates and to deploy the corresponding environments and services. You will also find a link to a repository with basic code that runs on each one of them, in case you want to fork it to use it as the basis for your deployment.
+## Build
 
-## Security
-
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+To create Proton Environment template, create a tar.gz archive with content of "environment" folder:
+```
+tar -cvzf my-proton-environment-template.tar.gz environment/
+```
+To create Proton Service template, create a tar.gz archive with content of "lambda-service" folder:
+```
+tar -cvzf my-lambda-service-template.tar.gz lambda-service/
+```
+Use both archives to create Proton Environemnt and Services via console or CLI. Read how to create both at https://docs.aws.amazon.com/proton/latest/adminguide/ag-getting-started-console.html and https://docs.aws.amazon.com/proton/latest/userguide/ug-get-started-console.html
 
 ## License
 
