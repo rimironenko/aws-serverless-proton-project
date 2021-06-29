@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: This environment holds a simple DDB table shared between services
+
+Resources:
+
+  EnvTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: isbn
+        Type: String
+      TableName: "{{ environment.inputs.table_name }}"
+      SSESpecification:
+        SSEEnabled: true
+
+  EnvApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: "{{ environment.inputs.api_name }}"
+      StageName: "{{ environment.inputs.stage_name }}"
+      TracingEnabled: true
+      Variables:
+        LAMBDA_ALIAS: "{{ environment.inputs.lambda_alias_name }}"
+
+  ApiHealthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: "{{ environment.inputs.healthcheck_function_name }}"
+      Handler: "{{ environment.inputs.healthcheck_function_handler }}"
+      Runtime: "{{ environment.inputs.healthcheck_function_runtime }}"
+      CodeUri: "{{ environment.inputs.healthcheck_function_code_uri }}"
+      AutoPublishAlias: "{{ environment.inputs.lambda_alias_name }}"
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /health
+            Method: get
+            RestApiId:
+              Ref: EnvApi
+
+Outputs:
+  EnvironmentTable:
+    Description: DynamoDB table to be used in current environment
+    Value: !Ref 'EnvTable'
+  EnvironmentApi:
+    Description: API Gateway to be used in current environment
+    Value: !Ref 'EnvApi'
+  LambdaAlias:
+    Description: Lambda Alias to be used for Lambda handkers
+    Value: "{{ environment.inputs.lambda_alias_name }}"

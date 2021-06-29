@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  LambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: "{{ service_instance.inputs.lambda_runtime }}"
+      Handler: "{{ service_instance.inputs.lambda_handler }}"
+      Timeout: "{{ service_instance.inputs.lambda_timeout }}"
+      MemorySize: "{{ service_instance.inputs.lambda_memory }}"
+      CodeUri: "{{ service_instance.inputs.code_uri }}"
+      AutoPublishAlias: "{{environment.outputs.LambdaAlias}}"
+      Environment:
+        Variables:
+          TABLE: "{{environment.outputs.EnvironmentTable}}"
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: "{{environment.outputs.EnvironmentTable}}"
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: "{{ service_instance.inputs.api_path }}"
+            Method: "{{ service_instance.inputs.api_http_method }}"
+            RestApiId: "{{environment.outputs.EnvironmentApi}}"

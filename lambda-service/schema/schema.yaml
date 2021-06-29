@@ -1,0 +1,66 @@
+schema:
+  format:
+    openapi: "3.0.0"
+  service_input_type: "LambdaServiceInput"
+  pipeline_input_type: "PipelineInputs"
+
+  types:
+    LambdaServiceInput:
+      type: object
+      description: "Input properties for a Lambda service"
+      properties:
+        lambda_runtime:
+          type: string
+          description: "The runtime for your Lambda service"
+          enum: [ "nodejs12.x", "python3.8", "ruby2.7", "java11", "java8", "go1.x", "dotnetcore3.1" ]
+          default: "java8"
+        lambda_handler:
+          type: string
+          description: "The handler path to find the CRUD methods for this API"
+          minLength: 1
+          maxLength: 50
+          default: "src/api"
+        lambda_timeout:
+          type: number
+          description: "The timeout in seconds of your Lambda function"
+          default: 30
+          minimum: 1
+          maximum: 900
+        lambda_memory:
+          type: number
+          description: "The size of your Lambda functions in MB"
+          default: 512
+          minimum: 1
+          maximum: 3008
+        code_uri:
+          type: string
+          description: "The s3 link to your application"
+          minLength: 1
+          maxLength: 200
+        api_path:
+          type: string
+          description: "API path of Lambda handler"
+          minLength: 1
+          maxLength: 200
+        api_http_method:
+          type: string
+          description: "HTTP Method of API path call"
+          enum: ["get","post","put","delete"]
+          default: "get"
+
+    PipelineInputs:
+      type: object
+      description: "Pipeline input properties"
+      properties:
+        unit_test_command:
+          type: string
+          description: "The command to run to unit test the application code"
+          default: "echo 'add your unit test command here'"
+          minLength: 1
+          maxLength: 200
+        packaging_command:
+          type: string
+          description: "The commands which packages your code into a file called function.zip"
+          default: "make publish"
+          minLength: 1
+          maxLength: 200
