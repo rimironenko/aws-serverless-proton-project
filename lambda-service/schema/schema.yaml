@@ -2,7 +2,6 @@ schema:
   format:
     openapi: "3.0.0"
   service_input_type: "LambdaServiceInput"
-  pipeline_input_type: "PipelineInputs"
 
   types:
     LambdaServiceInput:
@@ -18,7 +17,7 @@ schema:
           type: string
           description: "The handler path to find the CRUD methods for this API"
           minLength: 1
-          maxLength: 50
+          maxLength: 100
           default: "src/api"
         lambda_timeout:
           type: number
@@ -45,22 +44,6 @@ schema:
         api_http_method:
           type: string
           description: "HTTP Method of API path call"
-          enum: ["get","post","put","delete"]
+          enum: ["GET","POST","PUT","DELETE"]
           default: "get"
 
-    PipelineInputs:
-      type: object
-      description: "Pipeline input properties"
-      properties:
-        unit_test_command:
-          type: string
-          description: "The command to run to unit test the application code"
-          default: "echo 'add your unit test command here'"
-          minLength: 1
-          maxLength: 200
-        packaging_command:
-          type: string
-          description: "The commands which packages your code into a file called function.zip"
-          default: "make publish"
-          minLength: 1
-          maxLength: 200

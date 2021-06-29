@@ -1,5 +1,11 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
+AWSTemplateFormatVersion: "2010-09-09"
+Transform:
+  - AWS::Serverless-2016-10-31
+  - Name: AutoDeploymentGenerator
+    Parameters:
+      RestApiId: "{{environment.outputs.EnvironmentApi}}"
+      Service: "{{service.name}}"
+      StageName: "{{environment.outputs.EnvironmentApiStage}}"
 
 Resources:
   LambdaFunction:
@@ -7,8 +13,8 @@ Resources:
     Properties:
       Runtime: "{{ service_instance.inputs.lambda_runtime }}"
       Handler: "{{ service_instance.inputs.lambda_handler }}"
-      Timeout: "{{ service_instance.inputs.lambda_timeout }}"
-      MemorySize: "{{ service_instance.inputs.lambda_memory }}"
+      Timeout: !!int "{{ service_instance.inputs.lambda_timeout }}"
+      MemorySize: !!int "{{service_instance.inputs.lambda_memory}}"
       CodeUri: "{{ service_instance.inputs.code_uri }}"
       AutoPublishAlias: "{{environment.outputs.LambdaAlias}}"
       Environment:
@@ -17,10 +23,37 @@ Resources:
       Policies:
         - DynamoDBReadPolicy:
             TableName: "{{environment.outputs.EnvironmentTable}}"
-      Events:
-        ApiEvent:
-          Type: Api
-          Properties:
-            Path: "{{ service_instance.inputs.api_path }}"
+
+  LambdaFunctionApiEventPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName:
+        Ref: LambdaFunction
+      SourceArn:
+        Fn::Sub:
+          - arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*/${Method}/${Path}
+          - Api: "{{environment.outputs.EnvironmentApi}}"
             Method: "{{ service_instance.inputs.api_http_method }}"
-            RestApiId: "{{environment.outputs.EnvironmentApi}}"
+            Path: "{{ service_instance.inputs.api_path }}"
+
+  LambdaFunctionApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: "{{environment.outputs.EnvironmentApiRootResourceId}}"
+      PathPart: "{{service_instance.inputs.api_path}}"
+      RestApiId: "{{environment.outputs.EnvironmentApi}}"
+
+  LambdaFunctionApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: "{{ service_instance.inputs.api_http_method }}"
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction.Arn}/invocations
+      ResourceId: !Ref LambdaFunctionApiResource
+      RestApiId: "{{environment.outputs.EnvironmentApi}}"

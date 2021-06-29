@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: This environment holds a simple DDB table shared between services
 
@@ -40,13 +40,98 @@ Resources:
             RestApiId:
               Ref: EnvApi
 
+  ### Macro Resources
+
+  MacroExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+        -
+          PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              -
+                Effect: Allow
+                Action: ['logs:*']
+                Resource: '*'
+
+  AutoDeploymentGeneratorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import json
+          import string
+          import random
+
+          from datetime import datetime
+
+          def handler(event, context):
+
+              print("Recieved Event: {}".format(json.dumps(event)))
+
+
+              for key,value in event['fragment']['Resources'].items():
+                if value['Type'] == "AWS::ApiGateway::Method":
+                  depends_on_key = key
+              resource_spec = {
+                  'Type' : 'AWS::ApiGateway::Deployment',
+                  'DependsOn': key,
+                  'Properties' : {
+                      'Description': "Auto Deployment Created on Service ({}) update at {}".format(event['params']['Service'],datetime.now().strftime("%d/%m/%Y %H:%M:%S")),
+                      'RestApiId': event['params']['RestApiId'],
+                      'StageName': event['params']['StageName']
+                      }
+                  }
+
+              resource_key="{}Deployment{}".format(event['params']['Service'], ''.join(random.choices(string.ascii_uppercase + string.digits, k=6)))
+
+              template = event['fragment']
+
+              template['Resources'][resource_key]=resource_spec
+
+              responseData = {
+                      "requestId": event["requestId"],
+                      "status": "success",
+                      "fragment": template
+                  }
+              print("Sending Response {}".format(json.dumps(responseData)))
+              return responseData
+      Handler: index.handler
+      Role: !GetAtt MacroExecutionRole.Arn
+      Runtime: python3.7
+      Timeout: 60
+
+  AutoDeploymentGeneratorMacro:
+    Type: AWS::CloudFormation::Macro
+    Properties:
+      Name: AutoDeploymentGenerator
+      Description: Creates a resource of the the type AWS::ApiGateway::Deployment
+      FunctionName: !GetAtt AutoDeploymentGeneratorFunction.Arn
+
 Outputs:
   EnvironmentTable:
     Description: DynamoDB table to be used in current environment
     Value: !Ref 'EnvTable'
+  EnvironmentApiRootResourceId:
+    Description: API Gateway Root Resource ID to be used in current environment
+    Value: !GetAtt EnvApi.RootResourceId
   EnvironmentApi:
     Description: API Gateway to be used in current environment
     Value: !Ref 'EnvApi'
+  EnvironmentApiStage:
+    Description: API Gateway Stage to be used in current environment
+    Value: "{{ environment.inputs.stage_name }}"
   LambdaAlias:
     Description: Lambda Alias to be used for Lambda handkers
     Value: "{{ environment.inputs.lambda_alias_name }}"
