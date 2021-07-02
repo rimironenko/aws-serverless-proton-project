@@ -57,3 +57,8 @@ Resources:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction.Arn}/invocations
       ResourceId: !Ref LambdaFunctionApiResource
       RestApiId: "{{environment.outputs.EnvironmentApi}}"
+
+Outputs:
+  LambdaRuntime:
+    Description: "The lambda runtime"
+    Value: "{{service_instance.inputs.lambda_runtime}}"
