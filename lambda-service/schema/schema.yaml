@@ -2,6 +2,7 @@ schema:
   format:
     openapi: "3.0.0"
   service_input_type: "LambdaServiceInput"
+  pipeline_input_type: "LambdaServicePipelineInput"
 
   types:
     LambdaServiceInput:
@@ -46,4 +47,21 @@ schema:
           description: "HTTP Method of API path call"
           enum: ["GET","POST","PUT","DELETE"]
           default: "get"
+
+    LambdaServicePipelineInput:
+      type: object
+      description: "Pipeline input properties"
+      properties:
+        unit_test_command:
+          type: string
+          description: "The command to run to unit test the application code"
+          default: "echo 'add your unit test command here'"
+          minLength: 1
+          maxLength: 200
+        packaging_command:
+          type: string
+          description: "The commands which packages your code into a file called function.zip"
+          default: "make publish"
+          minLength: 1
+          maxLength: 200
 
