@@ -64,4 +64,16 @@ schema:
           default: "make publish"
           minLength: 1
           maxLength: 200
+        package_name:
+          type: string
+          description: "Name of package which is built by package command. Default is function.zip"
+          default: "function.zip"
+          minLength: 1
+          maxLength: 100
+        package_folder:
+          type: string
+          description: "Name of folder where package built by package command is present"
+          default: ""
+          minLength: 1
+          maxLength: 100
 

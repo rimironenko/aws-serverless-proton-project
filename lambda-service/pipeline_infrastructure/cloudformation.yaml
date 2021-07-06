@@ -21,6 +21,12 @@ Resources:
           - Name: service_name
             Type: PLAINTEXT
             Value: '{{service.name}}'
+          - Name: package_name
+            Type: PLAINTEXT
+            Value: '{{ pipeline.inputs.package_name }}'
+          - Name: package_folder
+            Type: PLAINTEXT
+            Value: '{{ pipeline.inputs.package_folder }}'
       ServiceRole:
         Fn::GetAtt:
           - PublishRole
@@ -61,8 +67,8 @@ Resources:
               "build": {
                 "commands": [
                   "{{ pipeline.inputs.packaging_command }}",
-                  "FUNCTION_URI=s3://$bucket_name/$CODEBUILD_BUILD_NUMBER/function.zip",
-                  "aws s3 cp function.zip $FUNCTION_URI"
+                  "FUNCTION_URI=s3://$bucket_name/$CODEBUILD_BUILD_NUMBER/$package_name",
+                  "aws s3 cp $package_folder$package_name $FUNCTION_URI"
                 ]
               },
               "post_build": {
@@ -124,7 +130,7 @@ Resources:
               },
               "build": {
                 "commands": [
-                  "aws proton update-service-instance --deployment-type CURRENT_VERSION --name $service_instance_name --service-name $service_name --spec rendered_service.yaml",
+                  "aws proton update-service-instance --deployment-type CURRENT_VERSION --name $service_instance_name --service-name $service_name --spec file://rendered_service.yaml",
                   "aws proton wait service-instance-update-complete --name $service_instance_name --service-name $service_name"
                 ]
               }
