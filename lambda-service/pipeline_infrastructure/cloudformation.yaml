@@ -41,11 +41,15 @@ Resources:
                       "java8": {"java": "corretto8"}
                     }[service_instances[0].outputs.LambdaRuntime] | tojson | safe }},
                 "commands": [
-                  "echo 'f6bd1536a743ab170b35c94ed4c7c4479763356bd543af5d391122f4af852460  yq_linux_amd64' > yq_linux_amd64.sha",
-                  "wget https://github.com/mikefarah/yq/releases/download/3.4.0/yq_linux_amd64",
-                  "sha256sum -c yq_linux_amd64.sha",
-                  "mv yq_linux_amd64 /usr/bin/yq",
-                  "chmod +x /usr/bin/yq"
+                  "pip3 uninstall -y awscli",
+                  "curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip",
+                  "unzip awscliv2.zip",
+                  "./aws/install",
+                  "aws --version",
+                  "wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq",
+                  "chmod +x /usr/bin/yq",
+                  "wget https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O /usr/bin/jq",
+                  "chmod +x /usr/bin/jq"
                 ]
               },
               "pre_build": {
@@ -63,8 +67,9 @@ Resources:
               },
               "post_build": {
                 "commands": [
-                  "aws proton --endpoint-url https://proton.$AWS_DEFAULT_REGION.amazonaws.com --region $AWS_DEFAULT_REGION get-service --name $service_name | jq -r .service.spec > service.yaml",
-                  "yq w service.yaml 'instances[*].spec.code_uri' \"$FUNCTION_URI\" > rendered_service.yaml"
+                  "aws proton get-service --name $service_name | jq -r '.service.spec' > service.yaml",
+                  "yq w service.yaml 'instances[*].spec.code_uri' \"$FUNCTION_URI\" > rendered_service.yaml",
+                  "aws s3 cp rendered_service.yaml s3://$bucket_name/$CODEBUILD_BUILD_NUMBER/rendered_service.yaml"
                 ]
               }
             },
@@ -107,10 +112,20 @@ Resources:
           {
             "version": "0.2",
             "phases": {
+              "install": {
+                "commands": [
+                  "aws --version",
+                  "pip3 uninstall -y awscli",
+                  "curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip",
+                  "unzip awscliv2.zip",
+                  "./aws/install",
+                  "aws --version"
+                ]
+              },
               "build": {
                 "commands": [
-                  "aws proton --endpoint-url https://proton.$AWS_DEFAULT_REGION.amazonaws.com --region $AWS_DEFAULT_REGION update-service-instance --deployment-type CURRENT_VERSION --name $service_instance_name --service-name $service_name --spec file://rendered_service.yaml",
-                  "aws proton --endpoint-url https://proton.$AWS_DEFAULT_REGION.amazonaws.com --region $AWS_DEFAULT_REGION wait service-instance-update-complete --name $service_instance_name --service-name $service_name"
+                  "aws proton update-service-instance --deployment-type CURRENT_VERSION --name $service_instance_name --service-name $service_name --spec rendered_service.yaml",
+                  "aws proton wait service-instance-update-complete --name $service_instance_name --service-name $service_name"
                 ]
               }
             }
