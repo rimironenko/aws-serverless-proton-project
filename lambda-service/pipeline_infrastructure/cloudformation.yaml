@@ -2,7 +2,6 @@ Resources:
 
   FunctionBucket:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
 
   BuildProject:
     Type: AWS::CodeBuild::Project
@@ -86,10 +85,6 @@ Resources:
             }
           }
         Type: CODEPIPELINE
-      EncryptionKey:
-        Fn::GetAtt:
-          - PipelineArtifactsBucketEncryptionKey
-          - Arn
 
   {% for service_instance in service_instances %}
   Deploy{{loop.index}}Project:
@@ -137,10 +132,6 @@ Resources:
             }
           }
         Type: CODEPIPELINE
-      EncryptionKey:
-        Fn::GetAtt:
-          - PipelineArtifactsBucketEncryptionKey
-          - Arn
     {% endfor %}
 
   # This role is used to build and publish the lambda function to S3
@@ -246,27 +237,6 @@ Resources:
                         - PipelineArtifactsBucket
                         - Arn
                     - /*
-          - Action:
-              - kms:Decrypt
-              - kms:DescribeKey
-              - kms:Encrypt
-              - kms:ReEncrypt*
-              - kms:GenerateDataKey*
-            Effect: Allow
-            Resource:
-              Fn::GetAtt:
-                - PipelineArtifactsBucketEncryptionKey
-                - Arn
-          - Action:
-              - kms:Decrypt
-              - kms:Encrypt
-              - kms:ReEncrypt*
-              - kms:GenerateDataKey*
-            Effect: Allow
-            Resource:
-              Fn::GetAtt:
-                - PipelineArtifactsBucketEncryptionKey
-                - Arn
         Version: "2012-10-17"
       PolicyName: PublishRoleDefaultPolicy
       Roles:
@@ -349,154 +319,19 @@ Resources:
                         - PipelineArtifactsBucket
                         - Arn
                     - /*
-          - Action:
-              - kms:Decrypt
-              - kms:DescribeKey
-            Effect: Allow
-            Resource:
-              Fn::GetAtt:
-                - PipelineArtifactsBucketEncryptionKey
-                - Arn
-          - Action:
-              - kms:Decrypt
-              - kms:Encrypt
-              - kms:ReEncrypt*
-              - kms:GenerateDataKey*
-            Effect: Allow
-            Resource:
-              Fn::GetAtt:
-                - PipelineArtifactsBucketEncryptionKey
-                - Arn
         Version: "2012-10-17"
       PolicyName: DeploymentRoleDefaultPolicy
       Roles:
         - Ref: DeploymentRole
 
-  PipelineArtifactsBucketEncryptionKey:
-    Type: AWS::KMS::Key
-    Properties:
-      KeyPolicy:
-        Statement:
-          - Action:
-              - kms:Create*
-              - kms:Describe*
-              - kms:Enable*
-              - kms:List*
-              - kms:Put*
-              - kms:Update*
-              - kms:Revoke*
-              - kms:Disable*
-              - kms:Get*
-              - kms:Delete*
-              - kms:ScheduleKeyDeletion
-              - kms:CancelKeyDeletion
-              - kms:GenerateDataKey
-              - kms:TagResource
-              - kms:UntagResource
-            Effect: Allow
-            Principal:
-              AWS:
-                Fn::Join:
-                  - ""
-                  - - "arn:"
-                    - Ref: AWS::Partition
-                    - ":iam::"
-                    - Ref: AWS::AccountId
-                    - :root
-            Resource: "*"
-          - Action:
-              - kms:Decrypt
-              - kms:DescribeKey
-              - kms:Encrypt
-              - kms:ReEncrypt*
-              - kms:GenerateDataKey*
-            Effect: Allow
-            Principal:
-              AWS:
-                Fn::GetAtt:
-                  - PipelineRole
-                  - Arn
-            Resource: "*"
-          - Action:
-              - kms:Decrypt
-              - kms:DescribeKey
-              - kms:Encrypt
-              - kms:ReEncrypt*
-              - kms:GenerateDataKey*
-            Effect: Allow
-            Principal:
-              AWS:
-                Fn::GetAtt:
-                  - PublishRole
-                  - Arn
-            Resource: "*"
-          - Action:
-              - kms:Decrypt
-              - kms:Encrypt
-              - kms:ReEncrypt*
-              - kms:GenerateDataKey*
-            Effect: Allow
-            Principal:
-              AWS:
-                Fn::GetAtt:
-                  - PublishRole
-                  - Arn
-            Resource: "*"
-          - Action:
-              - kms:Decrypt
-              - kms:DescribeKey
-            Effect: Allow
-            Principal:
-              AWS:
-                Fn::GetAtt:
-                  - DeploymentRole
-                  - Arn
-            Resource: "*"
-          - Action:
-              - kms:Decrypt
-              - kms:Encrypt
-              - kms:ReEncrypt*
-              - kms:GenerateDataKey*
-            Effect: Allow
-            Principal:
-              AWS:
-                Fn::GetAtt:
-                  - DeploymentRole
-                  - Arn
-            Resource: "*"
-        Version: "2012-10-17"
-    UpdateReplacePolicy: Delete
-    DeletionPolicy: Delete
-
   PipelineArtifactsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              KMSMasterKeyID:
-                Fn::GetAtt:
-                  - PipelineArtifactsBucketEncryptionKey
-                  - Arn
-              SSEAlgorithm: aws:kms
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
-    UpdateReplacePolicy: Retain
-    DeletionPolicy: Retain
-
-  PipelineArtifactsBucketEncryptionKeyAlias:
-    Type: AWS::KMS::Alias
-    Properties:
-      AliasName: 'alias/codepipeline-encryption-key-{{ service.name }}'
-      TargetKeyId:
-        Fn::GetAtt:
-          - PipelineArtifactsBucketEncryptionKey
-          - Arn
-    UpdateReplacePolicy: Delete
-    DeletionPolicy: Delete
 
   PipelineRole:
     Type: AWS::IAM::Role
@@ -532,17 +367,6 @@ Resources:
                         - PipelineArtifactsBucket
                         - Arn
                     - /*
-          - Action:
-              - kms:Decrypt
-              - kms:DescribeKey
-              - kms:Encrypt
-              - kms:ReEncrypt*
-              - kms:GenerateDataKey*
-            Effect: Allow
-            Resource:
-              Fn::GetAtt:
-                - PipelineArtifactsBucketEncryptionKey
-                - Arn
           - Action: codestar-connections:*
             Effect: Allow
             Resource: "*"
@@ -627,12 +451,6 @@ Resources:
     {%- endfor %}
 
       ArtifactStore:
-        EncryptionKey:
-          Id:
-            Fn::GetAtt:
-              - PipelineArtifactsBucketEncryptionKey
-              - Arn
-          Type: KMS
         Location:
           Ref: PipelineArtifactsBucket
         Type: S3

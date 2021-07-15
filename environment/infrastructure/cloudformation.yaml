@@ -17,7 +17,6 @@ Resources:
   EnvApi:
     Type: AWS::Serverless::Api
     Properties:
-      Name: "{{ environment.inputs.api_name }}"
       StageName: "{{ environment.inputs.stage_name }}"
       TracingEnabled: true
       Variables:
@@ -26,10 +25,22 @@ Resources:
   ApiHealthFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: "{{ environment.inputs.healthcheck_function_name }}"
-      Handler: "{{ environment.inputs.healthcheck_function_handler }}"
-      Runtime: "{{ environment.inputs.healthcheck_function_runtime }}"
-      CodeUri: "{{ environment.inputs.healthcheck_function_code_uri }}"
+      InlineCode: |
+        import json
+
+        def handler(event, context):
+            return {
+                "statusCode": 200,
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "body": json.dumps({
+                    "Status": "UP"
+                })
+            }
+      Handler: index.handler
+      Runtime: python3.7
+      Timeout: 10
       AutoPublishAlias: "{{ environment.inputs.lambda_alias_name }}"
       Events:
         ApiEvent:

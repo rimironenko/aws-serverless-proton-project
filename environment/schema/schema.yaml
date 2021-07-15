@@ -13,12 +13,6 @@ schema:
           default: myDynamoDbTable
           minLength: 3
           maxLength: 30
-        api_name:
-          type: string
-          description: "Shared API Gateway name"
-          default: myApi
-          minLength: 3
-          maxLength: 30
         stage_name:
           type: string
           description: "API Gateway stage name"
@@ -29,21 +23,3 @@ schema:
           type: string
           description: "Lambda Alias name"
           default: stage
-        healthcheck_function_name:
-          type: string
-          description: "Lambda Health Check function name"
-          minLength: 3
-          maxLength: 30
-        healthcheck_function_handler:
-          type: string
-          description: "Lambda Health Check function handler"
-        healthcheck_function_runtime:
-          type: string
-          description: "The runtime for Health Check function"
-          enum: [ "nodejs12.x", "nodejs14.x", "python3.8", "ruby2.7", "java11", "java8", "go1.x", "dotnetcore3.1" ]
-          default: "nodejs14.x"
-        healthcheck_function_code_uri:
-          type: string
-          description: "The s3 link to Health Check function code"
-          minLength: 5
-          maxLength: 200
