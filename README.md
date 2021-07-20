@@ -17,8 +17,7 @@ This repository represents Proton configuration to establish the following simpl
 - Lambda handlers
 - API Gateway
 
-![Architecture diagram]
-(https://miro.medium.com/max/1400/1*hkYSOC3c1xv9svTJOzgLsA.png)
+![Architecture diagram](https://miro.medium.com/max/1400/1*hkYSOC3c1xv9svTJOzgLsA.png)
 
 Lambda handlers are attached to API Gateway (AWS_PROXY integration) and can interact with Dynamo DB.
 
